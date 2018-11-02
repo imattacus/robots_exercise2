@@ -7,6 +7,7 @@ from util import rotateQuaternion, getHeading
 from random import random
 
 from time import time
+import numpy as np
 
 
 class PFLocaliser(PFLocaliserBase):
@@ -32,6 +33,23 @@ class PFLocaliser(PFLocaliserBase):
     
     def update_particle_cloud(self, scan):
         # Update particlecloud, given map and laser scan
+        weights = np.fromiter((self.sensor_model.get_weight(scan, pose)
+                               for pose in self.particlecloud.poses), float)
+
+        self.particlecloud.poses = np.random.choice(self.particlecloud.poses,
+                                                    size=len(self.particlecloud.poses),
+                                                    p=weights / weights.sum()).tolist()
+
+        # TODO: what should these actually be?
+        x_var = 0.1
+        y_var = 0.1
+        rot_var = 0.1
+
+        for pose in self.particlecloud.poses:
+            pose.position.x = random.gauss(mu=pose.position.x, sigma=x_var)
+            pose.position.y = random.gauss(mu=pose.position.y, sigma=y_var)
+            pose.rotation = rotateQuaternion(q_orig=pose.rotation,
+                                             yaw=random.gauss(mu=0, sigma=rot_var))
 
 
     def estimate_pose(self):
