@@ -16,9 +16,10 @@ class PFLocaliser(PFLocaliserBase):
         super(PFLocaliser, self).__init__()
         
         # Set motion model parameters
-        self.ODOM_ROTATION_NOISE = 
-        self.ODOM_TRANSLATION_NOISE = 
-        self.ODOM_DRIFT_NOISE = 
+        # TODO: do some experiments to work out what these should actually be
+        self.ODOM_ROTATION_NOISE = 0
+        self.ODOM_TRANSLATION_NOISE = 0
+        self.ODOM_DRIFT_NOISE = 0
  
         # Sensor model parameters
         self.NUMBER_PREDICTED_READINGS = 20 	# Number of readings to predict
