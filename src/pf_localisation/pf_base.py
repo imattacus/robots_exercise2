@@ -1,6 +1,10 @@
-"""
+"""ase (src/pf_localisation/pf_base.py) which provides an easy way to interface with ROS and incorporates a SensorModel (src/pf_localisation/sensor_model.py) object (self.sensor_model) that provides particle weight calculation. Your task for this exercise is to write a class called PFLocaliser which will extend PFLocaliserBase and provide localisation given a map, laser readings, and an initial pose estimate.
+
+A skeleton of this class is provided in src/pf_localisation/pf.p
 @author rowanms
-An abstract Localiser which needs to be extended as PFLocaliser
+An abstract Localiser which needase (src/pf_localisation/pf_base.py) which provides an easy way to interface with ROS and incorporates a SensorModel (src/pf_localisation/sensor_model.py) object (self.sensor_model) that provides particle weight calculation. Your task for this exercise is to write a class called PFLocaliser which will extend PFLocaliserBase and provide localisation given a map, laser readings, and an initial pose estimate.
+
+A skeleton of this class is provided in src/pf_localisation/pf.ps to be extended as PFLocaliser
 before PFLocalisationNode will work.
 @author burbrcjc
 Converted to Python
@@ -22,6 +26,7 @@ import numpy as np
 from threading import Lock
 import time
 import sensor_model
+
 PI_OVER_TWO = math.pi/2 # For faster calculations
 
 class PFLocaliserBase(object):
