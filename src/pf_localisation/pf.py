@@ -43,8 +43,8 @@ class PFLocaliser(PFLocaliserBase):
             new_pose = Pose()
             new_pose.position.x = random.gauss(mu=initialpose.position.x, sigma=x_var)
             new_pose.position.y = random.gauss(mu=initialpose.position.y, sigma=y_var)
-            new_pose.rotation = rotateQuaternion(q_orig=initialpose.rotation,
-                                                 yaw=random.gauss(mu=0, sigma=rot_var))
+            new_pose.orientation = rotateQuaternion(q_orig=initialpose.orientation,
+                                                    yaw=random.gauss(mu=0, sigma=rot_var))
             new_poses.poses.append(new_pose)
 
 	return new_poses
@@ -67,8 +67,8 @@ class PFLocaliser(PFLocaliserBase):
         for pose in self.particlecloud.poses:
             pose.position.x = random.gauss(mu=pose.position.x, sigma=x_var)
             pose.position.y = random.gauss(mu=pose.position.y, sigma=y_var)
-            pose.rotation = rotateQuaternion(q_orig=pose.rotation,
-                                             yaw=random.gauss(mu=0, sigma=rot_var))
+            pose.orientation = rotateQuaternion(q_orig=pose.orientation,
+                                                yaw=random.gauss(mu=0, sigma=rot_var))
 
 
     def estimate_pose(self):
