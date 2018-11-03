@@ -53,6 +53,33 @@ class PFLocaliser(PFLocaliserBase):
 
 
     def estimate_pose(self):
+
+	average = Pose();	
+	average.position.x = 0
+	average.position.y = 0
+	average.orientation.x = 0
+	average.orientation.y = 0
+	average.orientation.z = 0
+	average.orientation.w = 0
+
+	for pose in self.particlecloud.poses:
+		average.position.x += pose.position.x
+		average.position.y += pose.position.y
+		average.orientation.x += pose.orientation.x
+		average.orientation.y += pose.orientation.y
+		average.orientation.z += pose.orientation.z
+		average.orientation.w += pose.orientation.w
+	
+	length = len(self.particlecloud.poses)
+	average.position.x = average.position.x / length
+	average.position.y = average.position.y / length
+	average.orientation.x = average.orientation.x / length
+	average.orientation.y = average.orientation.y / length
+	average.orientation.z = average.orientation.z / length
+	average.orientation.w = average.orientation.w / length
+
+	return average
+
         # Create new estimated pose, given particle cloud
         # E.g. just average the location and orientation values of each of
         # the particles and return this.
