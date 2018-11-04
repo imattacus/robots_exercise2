@@ -34,11 +34,9 @@ class PFLocaliser(PFLocaliserBase):
         new_poses.header.frame_id = 0 # ?
         new_poses.header.stamp = rospy.Time.now()
 
-
-        # TODO: what should these actually be?
-        x_var = 0
-        y_var = 0
-        rot_var = 0
+        x_var = initialpose.pose.covariance[6 * 0 + 0]
+        y_var = initialpose.pose.covariance[6 * 1 + 1]
+        rot_var = initialpose.pose.covariance[6 * 5 + 5]
 
         for i in range(self.PARTICLE_COUNT):
             new_pose = Pose()
