@@ -4,7 +4,7 @@ import math
 import rospy
 
 from util import rotateQuaternion, getHeading
-from random import random
+from random import random, gauss
 
 from time import time
 import numpy as np
@@ -28,6 +28,7 @@ class PFLocaliser(PFLocaliserBase):
         self.PARTICLE_COUNT = 20 # Number of particles
        
     def initialise_particle_cloud(self, initialpose):
+	rospy.loginfo("initialise_particle_cloud")
         # Set particle cloud to initialpose plus noise
         new_poses = PoseArray()
         new_poses.header.frame_id = 0 # ?
@@ -35,22 +36,23 @@ class PFLocaliser(PFLocaliserBase):
 
 
         # TODO: what should these actually be?
-        x_var = 0.1
-        y_var = 0.1
-        rot_var = 0.1
+        x_var = 0
+        y_var = 0
+        rot_var = 0
 
         for i in range(self.PARTICLE_COUNT):
             new_pose = Pose()
-            new_pose.position.x = random.gauss(mu=initialpose.position.x, sigma=x_var)
-            new_pose.position.y = random.gauss(mu=initialpose.position.y, sigma=y_var)
-            new_pose.orientation = rotateQuaternion(q_orig=initialpose.orientation,
-                                                    yaw=random.gauss(mu=0, sigma=rot_var))
+            new_pose.position.x = gauss(mu=initialpose.pose.pose.position.x, sigma=x_var)
+            new_pose.position.y = gauss(mu=initialpose.pose.pose.position.y, sigma=y_var)
+            new_pose.orientation = rotateQuaternion(q_orig=initialpose.pose.pose.orientation,
+                                                    yaw=gauss(mu=0, sigma=rot_var))
             new_poses.poses.append(new_pose)
 
 	return new_poses
  
     
     def update_particle_cloud(self, scan):
+	rospy.loginfo("update_particle_cloud")
         # Update particlecloud, given map and laser scan
         weights = np.fromiter((self.sensor_model.get_weight(scan, pose)
                                for pose in self.particlecloud.poses), float)
@@ -60,18 +62,19 @@ class PFLocaliser(PFLocaliserBase):
                                                     p=weights / weights.sum()).tolist()
 
         # TODO: what should these actually be?
-        x_var = 0.1
-        y_var = 0.1
-        rot_var = 0.1
+        x_var = 0
+        y_var = 0
+        rot_var = 0
 
         for pose in self.particlecloud.poses:
-            pose.position.x = random.gauss(mu=pose.position.x, sigma=x_var)
-            pose.position.y = random.gauss(mu=pose.position.y, sigma=y_var)
+            pose.position.x = gauss(mu=pose.position.x, sigma=x_var)
+            pose.position.y = gauss(mu=pose.position.y, sigma=y_var)
             pose.orientation = rotateQuaternion(q_orig=pose.orientation,
-                                                yaw=random.gauss(mu=0, sigma=rot_var))
+                                                yaw=gauss(mu=0, sigma=rot_var))
 
 
     def estimate_pose(self):
+	rospy.loginfo("estimate_pose")
 
 	average = Pose();	
 	average.position.x = 0
