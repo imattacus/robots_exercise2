@@ -74,36 +74,35 @@ class PFLocaliser(PFLocaliserBase):
 
     def estimate_pose(self):
 
-#	max = sum(self.particlecloud.)
+	weights = np.fromiter((self.sensor_model.get_weight(scan, pose)
+                               for pose in self.particlecloud.poses), float)
+	max = sum(weights)
+	pick = random.uniform(0, max)
+	current = 0
 	
-	average = Pose();	
-	average.position.x = 0
-	average.position.y = 0
-	average.orientation.x = 0
-	average.orientation.y = 0
-	average.orientation.z = 0
-	average.orientation.w = 0
-
-	means = np.array[]
-
-	for pose in self.particlecloud.poses:
-		array.append([pose.position.x, pose.position.y, pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w])
-
-	whitened = whiten(means)
-	positions = kmeans(whitened, 5)
-
-	possible_positions = np.array[]	
-	for position in positions:
-		meanPose = new Pose()
-		meanPose.position.x = position[0]
-		meanPose.position.y = position[1]
-		meanPose.orientation.x = position[2]
-		meanPose.orientation.y = position[3]
-		meanPose.orientation.z = position[4]
-		meanPose.orientation.w - position[5]
-		possible_positions.append(meanPose)
+	for pose, pose.get_weight in self.particlecloud.poses
+		current += pose.get_weight
+		if current > pick
+			return pose
 	
-	return possible_positions
+#	average = Pose();	
+#	average.position.x = 0
+#	average.position.y = 0
+#
+#	means = np.array[]
+#
+#	for pose in self.particlecloud.poses:
+#		array.append([pose.position.x, pose.position.y])
+#
+#	whitened = whiten(means)
+#	positions = kmeans(whitened, 5)
+#
+#	for position in positions:
+#		meanPose = new Pose()
+#		meanPose.position.x = position[0]
+#		meanPose.position.y = position[1]
+#	
+#	return possible_positions
 #
 #
 #		average.position.x += pose.position.x
