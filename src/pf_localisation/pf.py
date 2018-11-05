@@ -9,7 +9,6 @@ import random as rand
 
 from time import time
 import numpy as np
-import scipy.cluster.vq import vq, kmeans, whiten
 from copy import deepcopy
 
 
@@ -86,20 +85,32 @@ class PFLocaliser(PFLocaliserBase):
             pose.orientation = rotateQuaternion(q_orig=pose.orientation,
                                                 yaw=gauss(mu=0, sigma=rot_var))
 
+    
+    
+    def kMeans(X, K, maxIters = 10, plot_progress = None):
+        centroids = X[np.random.choice(np.arange(len(X)), K), :]
+        for i in range(maxIters):
+            # Cluster Assignment step
+            C = np.array([np.argmin([np.dot(x_i-y_k, x_i-y_k) for y_k in centroids]) for x_i in X])
+            # Move centroids step
+            centroids = [X[C == k].mean(axis = 0) for k in range(K)]
+            if plot_progress != None: plot_progress(X, C, np.array(centroids))
+        return np.array(centroids) , C
+    
     def estimate_pose(self):
         rospy.loginfo("estimate_pose")
 
-        positions = np.array[]
+        positions = []
 
         for pose in self.particlecloud.poses:
             positions.append([pose.position.x, pose.position.y])
 
         #whitened = whiten(means)
-        centroids, labels = kmeans2(positions, 5)
+        centroids, labels = kMeans(positions, 5)
 
-        centroidGroups = np.array[]	
+        centroidGroups = []	
         for i in len(centroids):
-            group = np.array[]
+            group = []
             for n in labels:
                 if i==n:
                     group.append(self.particlecloud.poses[n])
