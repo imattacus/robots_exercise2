@@ -8,6 +8,7 @@ from random import random
 
 from time import time
 import numpy as np
+import scipy.cluster.vq import vq, kmeans, whiten
 
 
 class PFLocaliser(PFLocaliserBase):
@@ -73,6 +74,8 @@ class PFLocaliser(PFLocaliserBase):
 
     def estimate_pose(self):
 
+#	max = sum(self.particlecloud.)
+	
 	average = Pose();	
 	average.position.x = 0
 	average.position.y = 0
@@ -81,23 +84,44 @@ class PFLocaliser(PFLocaliserBase):
 	average.orientation.z = 0
 	average.orientation.w = 0
 
-	for pose in self.particlecloud.poses:
-		average.position.x += pose.position.x
-		average.position.y += pose.position.y
-		average.orientation.x += pose.orientation.x
-		average.orientation.y += pose.orientation.y
-		average.orientation.z += pose.orientation.z
-		average.orientation.w += pose.orientation.w
-	
-	length = len(self.particlecloud.poses)
-	average.position.x = average.position.x / length
-	average.position.y = average.position.y / length
-	average.orientation.x = average.orientation.x / length
-	average.orientation.y = average.orientation.y / length
-	average.orientation.z = average.orientation.z / length
-	average.orientation.w = average.orientation.w / length
+	means = np.array[]
 
-	return average
+	for pose in self.particlecloud.poses:
+		array.append([pose.position.x, pose.position.y, pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w])
+
+	whitened = whiten(means)
+	positions = kmeans(whitened, 5)
+
+	possible_positions = np.array[]	
+	for position in positions:
+		meanPose = new Pose()
+		meanPose.position.x = position[0]
+		meanPose.position.y = position[1]
+		meanPose.orientation.x = position[2]
+		meanPose.orientation.y = position[3]
+		meanPose.orientation.z = position[4]
+		meanPose.orientation.w - position[5]
+		possible_positions.append(meanPose)
+	
+	return possible_positions
+#
+#
+#		average.position.x += pose.position.x
+#		average.position.y += pose.position.y
+#		average.orientation.x += pose.orientation.x
+#		average.orientation.y += pose.orientation.y
+#		average.orientation.z += pose.orientation.z
+#		average.orientation.w += pose.orientation.w
+#	
+#	length = len(self.particlecloud.poses)
+#	average.position.x = average.position.x / length
+#	average.position.y = average.position.y / length
+#	average.orientation.x = average.orientation.x / length
+#	average.orientation.y = average.orientation.y / length
+#	average.orientation.z = average.orientation.z / length
+#	average.orientation.w = average.orientation.w / length
+#
+#	return average
 
         # Create new estimated pose, given particle cloud
         # E.g. just average the location and orientation values of each of
