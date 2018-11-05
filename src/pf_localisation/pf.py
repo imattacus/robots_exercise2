@@ -67,19 +67,12 @@ class PFLocaliser(PFLocaliserBase):
         return S
 
     def map_cell_occupied(self, pose):
-        x_trans = pose.position.x - self.occupancy_map.info.origin.position.x
-        y_trans = pose.position.y - self.occupancy_map.info.origin.position.y
-
-        rot = self.occupancy_map.info.origin.orientation.z
-        x_rot = x_trans * math.cos(-rot) - y_trans * math.sin(-rot)
-        y_rot = x_trans * math.sin(-rot) + y_trans * math.cos(-rot)
-
-        scale = self.occupancy_map.info.resolution
-        x_scale = x_rot / scale
-        y_scale = y_rot / scale
+        map_x = pose.position.x + self.occupancy_map.info.resolution * self.occupancy_map.info.width / 2
+        map_y = pose.position.y + self.occupancy_map.info.resolution * self.occupancy_map.info.height / 2
 
         threshold = 50
-        return self.occupancy_map.data[x_rot + self.occupancy_map.info.width * y_rot] > threshold
+        return self.occupancy_map.data[int(math.floor(map_x)) +
+                                       self.occupancy_map.info.width * int(math.floot(map_y))] > threshold
 
     def update_particle_cloud(self, scan):
 
