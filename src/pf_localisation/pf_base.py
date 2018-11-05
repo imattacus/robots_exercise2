@@ -200,9 +200,8 @@ class PFLocaliserBase(object):
         :Args:
             | odom (nav_msgs.msg.Odometry): Recent Odometry data
         """
-	rospy.loginfo("2")
         with self._update_lock:
-            rospy.loginfo("3")
+            
             t = time.time()
             x = odom.pose.pose.position.x
             y = odom.pose.pose.position.y
