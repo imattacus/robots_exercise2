@@ -50,10 +50,10 @@ class PFLocaliser(PFLocaliserBase):
             new_poses.poses.append(new_pose)
 
         for i in range(self.RANDOM_PARTICLE_COUNT):
+            new_pose = Pose()
             while True:
-                new_pose = Pose()
                 new_pose.position.x = rand.uniform(0, self.occupancy_map.info.width)
-                new_pose.position.y = rand.uniform(0, self.occupancy_map.info.width)
+                new_pose.position.y = rand.uniform(0, self.occupancy_map.info.height)
                 if not self.map_cell_occupied(new_pose):
                     break
             new_pose.orientation = rotateQuaternion(q_orig=initialpose.pose.pose.orientation,
@@ -78,7 +78,6 @@ class PFLocaliser(PFLocaliserBase):
         return S
 
     def pose_to_map_coords(self, pose):
-        map_info = self.occupancy_map.info
         ox = pose.position.x
         oy = pose.position.y
 
@@ -87,17 +86,27 @@ class PFLocaliser(PFLocaliserBase):
 
         return int(math.floor(map_x)), int(math.floor(map_y))
 
+    def map_coords_to_pose(self, map_x, map_y):
+        pose = Pose()
+        pose.x = self.sensor_model.map_origin_x + (map_x - 0.5 - self.sensor_model.map_width / 2) / self.sensor_model.map_resolution
+        pose.y = self.sensor_model.map_origin_y + (map_y - 0.5 - self.sensor_model.map_height / 2) / self.sensor_model.map_resolution
+
     def map_cell_occupied(self, pose):
         x, y = self.pose_to_map_coords(pose)
-        threshold = 50
-        return self.occupancy_map.data[x + y * self.occupancy_map.info.width] > threshold
+        threshold = 80
+        prob_occupied = self.occupancy_map.data[x + y * self.occupancy_map.info.width]
+
+        return prob_occupied > threshold
+
+    def score_particle(self, scan, pose):
+        return min(int(self.map_cell_occupied(pose)), self.sensor_model.get_weight(scan, pose))
 
     def update_particle_cloud(self, scan):
 
         scan.ranges = np.fromiter((0.0 if np.isnan(r) else r for r in scan.ranges), float)
 
         # Update particlecloud, given map and laser scan
-        weights = np.fromiter((self.sensor_model.get_weight(scan, pose)
+        weights = np.fromiter((self.score_particle(scan, pose)
                                for pose in self.particlecloud.poses), float)
 
         self.particlecloud.poses = self.resample(self.particlecloud.poses, weights)
