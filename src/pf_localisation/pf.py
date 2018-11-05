@@ -50,6 +50,7 @@ class PFLocaliser(PFLocaliserBase):
  
     
     def update_particle_cloud(self, scan):
+        scan.ranges = np.fromiter((0.0 if np.isnan(r) else r for r in scan.ranges), float)
 	rospy.loginfo("update_particle_cloud")
         # Update particlecloud, given map and laser scan
         weights = np.fromiter((self.sensor_model.get_weight(scan, pose)
