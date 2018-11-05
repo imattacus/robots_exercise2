@@ -26,7 +26,8 @@ class PFLocaliser(PFLocaliserBase):
         self.ODOM_DRIFT_NOISE = 0
 
         # Sensor model parameters
-        self.NUMBER_PREDICTED_READINGS = 20  # Number of readings to predict
+        self.NUMBER_PREDICTED_READINGS = 50  # Number of readings to predict
+        self.RANDOM_PARTICLE_COUNT = 150
 
         self.PARTICLE_COUNT = 20  # Number of particles
 
@@ -48,6 +49,17 @@ class PFLocaliser(PFLocaliserBase):
             new_pose.orientation = rotateQuaternion(q_orig=initialpose.pose.pose.orientation,
                                                     yaw=gauss(mu=0, sigma=rot_var))
             new_poses.poses.append(new_pose)
+
+
+        for i in range(self.RANDOM_PARTICLE_COUNT):
+            while True:
+                new_pose = Pose()
+                new_pose.position.x = rand.uniform(0, self.occupancy_map.info.width)
+                new_pose.position.y = rand.uniform(0, self.occupancy_map.info.width)
+                if not self.map_cell_occupied(new_pose):
+                    break
+            new_pose.orientation = rotateQuaternion(q_orig=initialpose.pose.pose.orientation,
+                                                    yaw=rand.uniform(0, 2*math.pi))
 
         return new_poses
 
