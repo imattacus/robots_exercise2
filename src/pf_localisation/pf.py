@@ -52,13 +52,12 @@ class PFLocaliser(PFLocaliserBase):
     def resample(self, particles, weights):
         S = []
         c = [weights[0]]
-        for i in range(1, self.PARTICLE_COUNT - 1):
-            c[i] = c[i - 1] + weights[i]
+        for i in range(1, self.PARTICLE_COUNT):
+            c.append(c[i - 1] + weights[i])
 
-        u = []
-        u[0] = rand.uniform(0, 1 / self.PARTICLE_COUNT)
-        i = 1
-        for j in range(0, self.PARTICLE_COUNT - 1):
+        u = [rand.uniform(0, 1 / self.PARTICLE_COUNT)]
+        i = 0
+        for j in range(0, self.PARTICLE_COUNT):
             while (u[j] > c[i]):
                 i += 1
             S.append(particles[i])
