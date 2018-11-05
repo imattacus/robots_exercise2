@@ -9,6 +9,7 @@ import random as rand
 
 from time import time
 import numpy as np
+from copy import deepcopy
 
 
 class PFLocaliser(PFLocaliserBase):
@@ -60,7 +61,7 @@ class PFLocaliser(PFLocaliserBase):
         for j in range(0, self.PARTICLE_COUNT):
             while (u[j] > c[i]):
                 i += 1
-            S.append(particles[i])
+            S.append(deepcopy(particles[i]))
             u.append(u[j] + 1 / self.PARTICLE_COUNT)
         return S
 
@@ -74,9 +75,9 @@ class PFLocaliser(PFLocaliserBase):
 
         self.particlecloud.poses = self.resample(self.particlecloud.poses, weights)
         # TODO: what should these actually be?
-        x_var = 0
-        y_var = 0
-        rot_var = 0
+        x_var = 0.05
+        y_var = 0.05
+        rot_var = 0.05
 
         for pose in self.particlecloud.poses:
             pose.position.x = gauss(mu=pose.position.x, sigma=x_var)
