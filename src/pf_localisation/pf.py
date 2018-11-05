@@ -36,7 +36,6 @@ class PFLocaliser(PFLocaliserBase):
         new_poses = PoseArray()
         new_poses.header.frame_id = 0  # ?
         new_poses.header.stamp = rospy.Time.now()
-
         x_var = initialpose.pose.covariance[6 * 0 + 0]
         y_var = initialpose.pose.covariance[6 * 1 + 1]
         rot_var = initialpose.pose.covariance[6 * 5 + 5]
@@ -96,13 +95,12 @@ class PFLocaliser(PFLocaliserBase):
         threshold = 80
         prob_occupied = self.occupancy_map.data[x + y * self.occupancy_map.info.width]
 
-        return prob_occupied > threshold
+        return prob_occupied == -1 or prob_occupied > threshold
 
     def score_particle(self, scan, pose):
-        return min(int(self.map_cell_occupied(pose)), self.sensor_model.get_weight(scan, pose))
+        return min(1 - int(self.map_cell_occupied(pose)), self.sensor_model.get_weight(scan, pose))
 
     def update_particle_cloud(self, scan):
-
         scan.ranges = np.fromiter((0.0 if np.isnan(r) else r for r in scan.ranges), float)
 
         # Update particlecloud, given map and laser scan
