@@ -9,7 +9,8 @@ import random as rand
 
 from time import time
 import numpy as np
-import scipy.cluster.vq import vq, kmeans, whiten
+import scipy.cluster.vq
+import vq, kmeans, whiten
 from copy import deepcopy
 
 
@@ -26,9 +27,10 @@ class PFLocaliser(PFLocaliserBase):
         self.ODOM_DRIFT_NOISE = 0
 
         # Sensor model parameters
-        self.NUMBER_PREDICTED_READINGS = 20  # Number of readings to predict
+        self.NUMBER_PREDICTED_READINGS = 50  # Number of readings to predict
 
-        self.PARTICLE_COUNT = 20  # Number of particles
+        self.PARTICLE_COUNT = 200  # Number of particles
+        self.RANDOM_PARTICLE_COUNT = 150
 
     def initialise_particle_cloud(self, initialpose):
         rospy.loginfo("initialise_particle_cloud")
@@ -41,12 +43,23 @@ class PFLocaliser(PFLocaliserBase):
         y_var = initialpose.pose.covariance[6 * 1 + 1]
         rot_var = initialpose.pose.covariance[6 * 5 + 5]
 
-        for i in range(self.PARTICLE_COUNT):
+        for i in range(self.PARTICLE_COUNT - self.RANDOM_PARTICLE_COUNT):
             new_pose = Pose()
             new_pose.position.x = gauss(mu=initialpose.pose.pose.position.x, sigma=x_var)
             new_pose.position.y = gauss(mu=initialpose.pose.pose.position.y, sigma=y_var)
             new_pose.orientation = rotateQuaternion(q_orig=initialpose.pose.pose.orientation,
                                                     yaw=gauss(mu=0, sigma=rot_var))
+            new_poses.poses.append(new_pose)
+
+        for i in range(self.RANDOM_PARTICLE_COUNT):
+            while True:
+                new_pose = Pose()
+                new_pose.position.x = rand.uniform(0, self.occupancy_map.info.width)
+                new_pose.position.y = rand.uniform(0, self.occupancy_map.info.width)
+                if not self.map_cell_occupied(new_pose):
+                    break
+            new_pose.orientation = rotateQuaternion(q_orig=initialpose.pose.pose.orientation,
+                                                    yaw=rand.uniform(0, 2 * math.pi))
             new_poses.poses.append(new_pose)
 
         return new_poses
@@ -104,17 +117,17 @@ class PFLocaliser(PFLocaliserBase):
         for pose in self.particlecloud.poses:
             positions.append([pose.position.x, pose.position.y])
 
-        #whitened = whiten(means)
+        # whitened = whiten(means)
         centroids, labels = kmeans2(positions, 5)
 
-        centroidGroups = np.array[]	
+        centroidGroups = np.array[]
         for i in len(centroids):
             group = np.array[]
             for n in labels:
-                if i==n:
+                if i == n:
                     group.append(self.particlecloud.poses[n])
             centroidGroups.append(group)
-	
+
         mostMembersCluster = 0
         maxMembers = len(centroidGroups[0])
 
@@ -123,21 +136,21 @@ class PFLocaliser(PFLocaliserBase):
             if maxMembers < noMembers:
                 maxMembers = noMembers
                 mostMembersCluster = i
-	
+
         meanPose = Pose()
         meanPose.position.x = centroids[mostMembersCluster][0]
         meanPose.position.y = centroids[mostMembersCluster][1]
         meanPose.orientation.x = 0.0
         meanPose.orientation.y = 0.0
         meanPose.orientation.z = 0.0
-        meanPose.orientation.w = 0.0	
+        meanPose.orientation.w = 0.0
 
         for pose in centroidGroups[mostMembersCluster]:
             meanPose.orientation.x += pose.orientation.x
             meanPose.orientation.y += pose.orientation.y
             meanPose.orientation.z += pose.orientation.z
             meanPose.orientation.w += pose.orientation.w
-	
+
         meanPose.orientation.x /= maxMembers
         meanPose.orientation.y /= maxMembers
         meanPose.orientation.z /= maxMembers
