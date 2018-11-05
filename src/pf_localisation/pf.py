@@ -72,7 +72,7 @@ class PFLocaliser(PFLocaliserBase):
         weights = np.fromiter((self.sensor_model.get_weight(scan, pose)
                                for pose in self.particlecloud.poses), float)
 
-        self.particlecloud.poses = resample(self.particlecloud.poses, weights)
+        self.particlecloud.poses = self.resample(self.particlecloud.poses, weights)
         # TODO: what should these actually be?
         x_var = 0
         y_var = 0
