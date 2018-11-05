@@ -73,8 +73,6 @@ class PFLocaliser(PFLocaliserBase):
 
 
     def estimate_pose(self):
-
-#	max = sum(self.particlecloud.)
 	
 	average = Pose();	
 	average.position.x = 0
@@ -100,7 +98,7 @@ class PFLocaliser(PFLocaliserBase):
 		meanPose.orientation.x = position[2]
 		meanPose.orientation.y = position[3]
 		meanPose.orientation.z = position[4]
-		meanPose.orientation.w - position[5]
+		meanPose.orientation.w = position[5]
 		possible_positions.append(meanPose)
 	
 	return possible_positions
