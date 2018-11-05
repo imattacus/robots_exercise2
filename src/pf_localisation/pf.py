@@ -72,22 +72,22 @@ class PFLocaliser(PFLocaliserBase):
 
 
     def estimate_pose(self):
-	    rospy.loginfo("estimate_pose")
-	
-	
+        rospy.loginfo("estimate_pose")
+
+
         numBinsHorizontal = 10
-	    numBinsVertical = 10
+        numBinsVertical = 10
 
         binWidth = self.occupancy_map.info.width / numBinsHorizontal
         binHeight = self.occupancy_map.info.height / numBinsVertical
 
-	    bins = np.zeros(numBinsVertical, numBinsHorizontal)
+        bins = np.zeros(numBinsVertical, numBinsHorizontal)
 
 
-	    for pose in self.particlecloud.poses:
+        for pose in self.particlecloud.poses:
             particle_x = 
             particle_y = 
-		    bin_x = int(math.floor(particle_x / binWidth))
+            bin_x = int(math.floor(particle_x / binWidth))
             bin_y = int(math.floor(particle_y / binHeight))
             bins[bin_y][bin_x] += 1
 
@@ -115,7 +115,7 @@ class PFLocaliser(PFLocaliserBase):
             searchAreaY = 0
             searchAreaHeight = binHeight * 2
 
-        
+
         average = Pose()
         average.position.x = 0
         average.position.y = 0
@@ -132,17 +132,17 @@ class PFLocaliser(PFLocaliserBase):
                 if (searchAreaY < particle_y and particle_y < searchAreaY+searchAreaHeight):
                     count += 1
                     average.position.x += pose.position.x
-		            average.position.y += pose.position.y
-		            average.orientation.x += pose.orientation.x
-		            average.orientation.y += pose.orientation.y
-		            average.orientation.z += pose.orientation.z
+                    average.position.y += pose.position.y
+                    average.orientation.x += pose.orientation.x
+                    average.orientation.y += pose.orientation.y
+                    average.orientation.z += pose.orientation.z
                     average.orientation.w += pose.orientation.w
 
         average.position.x = average.position.x / count
-	    average.position.y = average.position.y / count
-	    average.orientation.x = average.orientation.x / count
-	    average.orientation.y = average.orientation.y / count
-	    average.orientation.z = average.orientation.z / count
+        average.position.y = average.position.y / count
+        average.orientation.x = average.orientation.x / count
+        average.orientation.y = average.orientation.y / count
+        average.orientation.z = average.orientation.z / count
         average.orientation.w = average.orientation.w / count
 
         return average
