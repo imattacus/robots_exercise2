@@ -71,8 +71,8 @@ class PFLocaliser(PFLocaliserBase):
         y_trans = pose.position.y - self.occupancy_map.info.origin.position.y
 
         rot = self.occupancy_map.info.origin.orientation.z
-        x_rot = x_trans * math.cos(rot) - y_trans * math.sin(rot)
-        y_rot = x_trans * math.sin(rot) + y_trans * math.cos(rot)
+        x_rot = x_trans * math.cos(-rot) - y_trans * math.sin(-rot)
+        y_rot = x_trans * math.sin(-rot) + y_trans * math.cos(-rot)
 
         scale = self.occupancy_map.info.resolution
         x_scale = x_rot / scale
