@@ -9,8 +9,6 @@ import random as rand
 
 from time import time
 import numpy as np
-import scipy.cluster.vq
-import vq, kmeans, whiten
 from copy import deepcopy
 
 
