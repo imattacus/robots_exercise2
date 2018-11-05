@@ -9,6 +9,7 @@ import random as rand
 
 from time import time
 import numpy as np
+import scipy.cluster.vq import vq, kmeans, whiten
 from copy import deepcopy
 
 
@@ -88,36 +89,48 @@ class PFLocaliser(PFLocaliserBase):
     def estimate_pose(self):
         rospy.loginfo("estimate_pose")
 
-        average = Pose();
-        average.position.x = 0
-        average.position.y = 0
-        average.orientation.x = 0
-        average.orientation.y = 0
-        average.orientation.z = 0
-        average.orientation.w = 0
+        positions = np.array[]
 
         for pose in self.particlecloud.poses:
-            average.position.x += pose.position.x
-            average.position.y += pose.position.y
-            average.orientation.x += pose.orientation.x
-            average.orientation.y += pose.orientation.y
-            average.orientation.z += pose.orientation.z
-            average.orientation.w += pose.orientation.w
+            positions.append([pose.position.x, pose.position.y])
 
-        length = len(self.particlecloud.poses)
-        average.position.x = average.position.x / length
-        average.position.y = average.position.y / length
-        average.orientation.x = average.orientation.x / length
-        average.orientation.y = average.orientation.y / length
-        average.orientation.z = average.orientation.z / length
-        average.orientation.w = average.orientation.w / length
+        #whitened = whiten(means)
+        centroids, labels = kmeans2(positions, 5)
 
-        return average
+        centroidGroups = np.array[]	
+        for i in len(centroids):
+            group = np.array[]
+            for n in labels:
+                if i==n:
+                    group.append(self.particlecloud.poses[n])
+            centroidGroups.append(group)
+	
+        mostMembersCluster = 0
+        maxMembers = len(centroidGroups[0])
 
-        # Create new estimated pose, given particle cloud
-        # E.g. just average the location and orientation values of each of
-        # the particles and return this.
+        for i in centroidGroups:
+            noMembers = len(centroidGroups[i])
+            if maxMembers < noMembers:
+                maxMembers = noMembers
+                mostMembersCluster = i
+	
+        meanPose = Pose()
+        meanPose.position.x = centroids[mostMembersCluster][0]
+        meanPose.position.y = centroids[mostMembersCluster][1]
+        meanPose.orientation.x = 0.0
+        meanPose.orientation.y = 0.0
+        meanPose.orientation.z = 0.0
+        meanPose.orientation.w = 0.0	
 
-        # Better approximations could be made by doing some simple clustering,
-        # e.g. taking the average location of half the particles after 
-        # throwing away any which are outliers
+        for pose in centroidGroups[mostMembersCluster]:
+            meanPose.orientation.x += pose.orientation.x
+            meanPose.orientation.y += pose.orientation.y
+            meanPose.orientation.z += pose.orientation.z
+            meanPose.orientation.w += pose.orientation.w
+	
+        meanPose.orientation.x /= maxMembers
+        meanPose.orientation.y /= maxMembers
+        meanPose.orientation.z /= maxMembers
+        meanPose.orientation.w /= maxMembers
+
+        return meanPose
