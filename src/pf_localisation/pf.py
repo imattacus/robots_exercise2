@@ -78,8 +78,13 @@ class PFLocaliser(PFLocaliserBase):
         return S
 
     def pose_to_map_coords(self, pose):
-        map_x = pose.position.x + self.occupancy_map.info.resolution * self.occupancy_map.info.width / 2
-        map_y = pose.position.y + self.occupancy_map.info.resolution * self.occupancy_map.info.height / 2
+        map_info = self.occupancy_map.info
+        ox = pose.position.x
+        oy = pose.position.y
+
+        map_x = (ox - self.sensor_model.map_origin_x) * self.sensor_model.map_resolution + 0.5 + self.sensor_model.map_width / 2
+        map_y = (oy - self.sensor_model.map_origin_y) * self.sensor_model.map_resolution + 0.5 + self.sensor_model.map_height / 2
+
         return int(math.floor(map_x)), int(math.floor(map_y))
 
     def map_cell_occupied(self, pose):
