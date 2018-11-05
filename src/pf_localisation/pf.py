@@ -72,33 +72,86 @@ class PFLocaliser(PFLocaliserBase):
 
 
     def estimate_pose(self):
-	rospy.loginfo("estimate_pose")
-
-	average = Pose();	
-	average.position.x = 0
-	average.position.y = 0
-	average.orientation.x = 0
-	average.orientation.y = 0
-	average.orientation.z = 0
-	average.orientation.w = 0
-
-	for pose in self.particlecloud.poses:
-		average.position.x += pose.position.x
-		average.position.y += pose.position.y
-		average.orientation.x += pose.orientation.x
-		average.orientation.y += pose.orientation.y
-		average.orientation.z += pose.orientation.z
-		average.orientation.w += pose.orientation.w
+	    rospy.loginfo("estimate_pose")
 	
-	length = len(self.particlecloud.poses)
-	average.position.x = average.position.x / length
-	average.position.y = average.position.y / length
-	average.orientation.x = average.orientation.x / length
-	average.orientation.y = average.orientation.y / length
-	average.orientation.z = average.orientation.z / length
-	average.orientation.w = average.orientation.w / length
+	
+        numBinsHorizontal = 10
+	    numBinsVertical = 10
 
-	return average
+        binWidth = self.occupancy_map.info.width / numBinsHorizontal
+        binHeight = self.occupancy_map.info.height / numBinsVertical
+
+	    bins = np.zeros(numBinsVertical, numBinsHorizontal)
+
+
+	    for pose in self.particlecloud.poses:
+            particle_x = 
+            particle_y = 
+		    bin_x = int(math.floor(particle_x / binWidth))
+            bin_y = int(math.floor(particle_y / binHeight))
+            bins[bin_y][bin_x] += 1
+
+        busiestBinX = 0
+        busiestBinY = 0 
+        busyBin = 0
+        for i in range(numBinsVertical):
+            for j in range(numBinsHorizontal):
+                if busyBin < bins[i][j]:
+                    busiestBinX = j
+                    busiestBinY = i
+                    busyBin = bins[i][j]
+
+        if busiestBinX > 0:
+            searchAreaX = (busiestBinX-1) * binWidth
+            searchAreaWidth = binWidth * 3
+        else:
+            searchAreaX = 0
+            searchAreaWidth = binWidth * 2
+
+        if busiestBinY > 0:
+            searchAreaY = (busiestBinY-1) * binHeight
+            searchAreaHeight = binHeight * 3
+        else:
+            searchAreaY = 0
+            searchAreaHeight = binHeight * 2
+
+        
+        average = Pose()
+        average.position.x = 0
+        average.position.y = 0
+        average.orientation.x = 0
+        average.orientation.y = 0
+        average.orientation.z = 0
+        average.orientation.w = 0
+        count = 0
+             
+        for pose in self.particlecloud.poses:
+            particle_x = 
+            particle_y = 
+            if (searchAreaX < particle_x and particle_x < searchAreaX+searchAreaWidth):
+                if (searchAreaY < particle_y and particle_y < searchAreaY+searchAreaHeight):
+                    count += 1
+                    average.position.x += pose.position.x
+		            average.position.y += pose.position.y
+		            average.orientation.x += pose.orientation.x
+		            average.orientation.y += pose.orientation.y
+		            average.orientation.z += pose.orientation.z
+                    average.orientation.w += pose.orientation.w
+
+        average.position.x = average.position.x / count
+	    average.position.y = average.position.y / count
+	    average.orientation.x = average.orientation.x / count
+	    average.orientation.y = average.orientation.y / count
+	    average.orientation.z = average.orientation.z / count
+        average.orientation.w = average.orientation.w / count
+
+        return average
+
+        
+                
+                
+	
+
 
         # Create new estimated pose, given particle cloud
         # E.g. just average the location and orientation values of each of
