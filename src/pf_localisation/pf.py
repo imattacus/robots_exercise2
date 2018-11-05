@@ -134,4 +134,4 @@ class PFLocaliser(PFLocaliserBase):
         average.orientation.z = average.orientation.z / length
         average.orientation.w = average.orientation.w / length
 
-    return average
+        return average
