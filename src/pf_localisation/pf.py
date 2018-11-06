@@ -150,7 +150,7 @@ class PFLocaliser(PFLocaliserBase):
 
     def conv2d(self, a, f):
         s = f.shape + tuple(np.subtract(a.shape, f.shape) + 1)
-        strd = numpy.lib.stride_tricks.as_strided
+        strd = np.lib.stride_tricks.as_strided
         subM = strd(a, shape=s, strides=a.strides * 2)
         return np.einsum('ij,ijkl->kl', f, subM)
 
@@ -165,11 +165,11 @@ class PFLocaliser(PFLocaliserBase):
     @timeit
     def estimate_pose(self):
         rospy.loginfo("estimate_pose")
+	kern_size = 5
+        k = self.gkern(kern_size, 1)
 
-        k = self.gkern(5, 1)
-
-        numBinsHorizontal = 10
-        numBinsVertical = 10
+        numBinsHorizontal = 400
+        numBinsVertical = 400
 
         binWidth = self.occupancy_map.info.width / numBinsHorizontal
         binHeight = self.occupancy_map.info.height / numBinsVertical
@@ -187,11 +187,11 @@ class PFLocaliser(PFLocaliserBase):
         busiestBinX = 0
         busiestBinY = 0 
         busyBin = 0
-        for i in range(numBinsVertical):
-            for j in range(numBinsHorizontal):
+        for i in range(numBinsVertical - kern_size):
+            for j in range(numBinsHorizontal - kern_size):
                 if busyBin < convolved[i][j]:
-                    busiestBinX = j
-                    busiestBinY = i
+                    busiestBinX = j + math.floor(kern_size / 2)
+                    busiestBinY = i + math.floor(kern_size / 2)
                     busyBin = convolved[i][j]
 
         if busiestBinX > 0:
