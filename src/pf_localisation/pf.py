@@ -1,3 +1,6 @@
+from __future__ import print_function
+import sys
+
 from geometry_msgs.msg import Pose, PoseArray, Quaternion
 from pf_base import PFLocaliserBase
 import math
@@ -10,6 +13,24 @@ import random as rand
 from time import time
 import numpy as np
 from copy import deepcopy
+
+
+
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
+def timeit(method):
+
+    def timed(*args, **kw):
+        ts = time()
+        result = method(*args, **kw)
+        te = time()
+
+        with open("timings.csv", 'a+') as f:
+	    f.write("{}\n".format(te-ts))
+        return result
+
+    return timed
 
 
 class PFLocaliser(PFLocaliserBase):
@@ -127,6 +148,7 @@ class PFLocaliser(PFLocaliserBase):
             pose.orientation = rotateQuaternion(q_orig=pose.orientation,
                                                 yaw=gauss(mu=0, sigma=rot_var))
     
+    @timeit
     def estimate_pose(self):
         rospy.loginfo("estimate_pose")
 
