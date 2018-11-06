@@ -50,7 +50,7 @@ class PFLocaliser(PFLocaliserBase):
 
         self.PARTICLE_COUNT = 200  # Total number of particles
         self.INITIAL_PARTICLE_COUNT = 180 # Number of particles around the initial pose (<= PARTICLECOUNT)
-	self.RESAMPLE_PARTICLE_COUNT = 185 # Number of particles to generate on resampling (<= PARTICLECOUNT)
+        self.RESAMPLE_PARTICLE_COUNT = 185 # Number of particles to generate on resampling (<= PARTICLECOUNT)
 
     def random_pose(self):
 	new_pose = Pose()
@@ -174,13 +174,16 @@ class PFLocaliser(PFLocaliserBase):
         binWidth = self.occupancy_map.info.width / numBinsHorizontal
         binHeight = self.occupancy_map.info.height / numBinsVertical
 
-        bins = np.zeros((numBinsVertical, numBinsHorizontal))
+        bins = np.zeros((numBinsVertical, numBinsHorizontal), dtype=list)
 
         for pose in self.particlecloud.poses:
             particle_x, particle_y = self.pose_to_map_coords(pose)
             bin_x = int(math.floor(particle_x / binWidth))
             bin_y = int(math.floor(particle_y / binHeight))
-            bins[bin_y][bin_x] += 1
+            if bins[bin_y][bin_x] == 0:
+                bins[bin_y][bin_x] = [pose]
+            else:
+                bins[bin_y][bin_x].append(pose)
 
         convolved = self.conv2d(bins, k)
 
@@ -207,6 +210,29 @@ class PFLocaliser(PFLocaliserBase):
         else:
             searchAreaY = 0
             searchAreaHeight = binHeight * 2
+        # HERE!!!
+        busyBinCount = 0
+        for i in range(numBinsVertical):
+            for j in range(numBinsHorizontal):
+                if bins[i][j] != 0:
+                    if busyBinCount < len(bins[i][j]):
+                        busiestBinX = j
+                        busiestBinY = i
+                        busyBinCount = bins[i][j]
+
+        # if busiestBinX > 0:
+        #     searchAreaX = (busiestBinX-1) * binWidth
+        #     searchAreaWidth = binWidth * 3
+        # else:
+        #     searchAreaX = 0
+        #     searchAreaWidth = binWidth * 2
+
+        # if busiestBinY > 0:
+        #     searchAreaY = (busiestBinY-1) * binHeight
+        #     searchAreaHeight = binHeight * 3
+        # else:
+        #     searchAreaY = 0
+        #     searchAreaHeight = binHeight * 2
 
 
         average = Pose()
@@ -217,19 +243,19 @@ class PFLocaliser(PFLocaliserBase):
         average.orientation.z = 0
         average.orientation.w = 0
         count = 0
-             
-        for pose in self.particlecloud.poses:
-            particle_x, particle_y = self.pose_to_map_coords(pose)
 
-            if (searchAreaX < particle_x and particle_x < searchAreaX+searchAreaWidth):
-                if (searchAreaY < particle_y and particle_y < searchAreaY+searchAreaHeight):
-                    count += 1
-                    average.position.x += pose.position.x
-                    average.position.y += pose.position.y
-                    average.orientation.x += pose.orientation.x
-                    average.orientation.y += pose.orientation.y
-                    average.orientation.z += pose.orientation.z
-                    average.orientation.w += pose.orientation.w
+        for i in range(busiestBinX - 1, busiestBinX + 1):
+            for j in range(busiestBinY - 1, busiestBinY + 1):
+                if i >= 0 and i < numBinsHorizontal and j >= 0 and j < numBinsVertical:
+                    if bins[j][i] != 0:
+                        for pose in bins[j][i]:
+                            count += 1
+                            average.position.x += pose.position.x
+                            average.position.y += pose.position.y
+                            average.orientation.x += pose.orientation.x
+                            average.orientation.y += pose.orientation.y
+                            average.orientation.z += pose.orientation.z
+                            average.orientation.w += pose.orientation.w
 
         average.position.x = average.position.x / count
         average.position.y = average.position.y / count
