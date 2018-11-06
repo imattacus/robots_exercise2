@@ -48,9 +48,9 @@ class PFLocaliser(PFLocaliserBase):
         # Sensor model parameters
         self.NUMBER_PREDICTED_READINGS = 50  # Number of readings to predict
 
-        self.PARTICLE_COUNT = 200  # Total number of particles
-        self.INITIAL_PARTICLE_COUNT = 180 # Number of particles around the initial pose (<= PARTICLECOUNT)
-        self.RESAMPLE_PARTICLE_COUNT = 185 # Number of particles to generate on resampling (<= PARTICLECOUNT)
+        self.PARTICLE_COUNT = 300  # Total number of particles
+        self.INITIAL_PARTICLE_COUNT = 270 # Number of particles around the initial pose (<= PARTICLECOUNT)
+        self.RESAMPLE_PARTICLE_COUNT = 250 # Number of particles to generate on resampling (<= PARTICLECOUNT)
 
     def random_pose(self):
 	new_pose = Pose()
@@ -230,9 +230,6 @@ class PFLocaliser(PFLocaliserBase):
         for i in range(busiestBinX - inclusion_range, busiestBinX + inclusion_range + 1):
             for j in range(busiestBinY - inclusion_range, busiestBinY + inclusion_range + 1):
                 if i >= 0 and i < numBinsHorizontal - kern_size and j >= 0 and j < numBinsVertical - kern_size:
-		    print("made it this far, {}, {}".format(i,j))
-		    conv_i = int(i + math.floor(kern_size / 2))
-		    conv_j = int(j + math.floor(kern_size / 2))
                     if particle_bins[j][i] != 0:
                         for pose in particle_bins[j][i]:
                             count += 1
@@ -242,7 +239,6 @@ class PFLocaliser(PFLocaliserBase):
                             average.orientation.y += pose.orientation.y
                             average.orientation.z += pose.orientation.z
                             average.orientation.w += pose.orientation.w
-			    print(count)
 
         average.position.x = average.position.x / count
         average.position.y = average.position.y / count
