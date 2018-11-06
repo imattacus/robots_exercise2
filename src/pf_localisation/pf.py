@@ -27,9 +27,9 @@ class PFLocaliser(PFLocaliserBase):
         # Sensor model parameters
         self.NUMBER_PREDICTED_READINGS = 50  # Number of readings to predict
 
-        self.PARTICLE_COUNT = 100  # Total number of particles
-        self.INITIAL_PARTICLE_COUNT = 100 # Number of particles around the initial pose (<= PARTICLECOUNT)
-	self.RESAMPLE_PARTICLE_COUNT = 100 # Number of particles to generate on resampling (<= PARTICLECOUNT)
+        self.PARTICLE_COUNT = 200  # Total number of particles
+        self.INITIAL_PARTICLE_COUNT = 180 # Number of particles around the initial pose (<= PARTICLECOUNT)
+	self.RESAMPLE_PARTICLE_COUNT = 185 # Number of particles to generate on resampling (<= PARTICLECOUNT)
 
     def random_pose(self):
 	new_pose = Pose()
