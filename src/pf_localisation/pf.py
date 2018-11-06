@@ -27,19 +27,26 @@ class PFLocaliser(PFLocaliserBase):
         # Sensor model parameters
         self.NUMBER_PREDICTED_READINGS = 50  # Number of readings to predict
 
-        self.PARTICLE_COUNT = 200  # Number of particles
-        self.RANDOM_PARTICLE_COUNT = 150
+        self.PARTICLE_COUNT = 200  # Total number of particles
+        self.INITIAL_PARTICLE_COUNT = 50 # Number of particles around the initial pose (<= PARTICLECOUNT)
+	self.RESAMPLE_PARTICLE_COUNT = 150 # Number of particles to generate on resampling (<= PARTICLECOUNT)
 
     def random_pose(self):
 	new_pose = Pose()
+        rand_angle = rand.uniform(0, 2 * math.pi)
+        new_pose.orientation = rotateQuaternion(q_orig=Quaternion(0, 0, 0, 1),
+		                                yaw=rand_angle)
+
 	while True:
-	    new_pose.position.x = rand.uniform(0, self.occupancy_map.info.width)
-	    new_pose.position.y = rand.uniform(0, self.occupancy_map.info.height)
+            x, y = self.map_coords_to_world(map_x=rand.uniform(0, self.occupancy_map.info.width - 1),
+                                            map_y=rand.uniform(0, self.occupancy_map.info.height - 1))
+            new_pose.position.x = x
+            new_pose.position.y = y
+
 	    if not self.map_cell_occupied(new_pose):
 	        #rospy.loginfo("random x={}, y={}".format(new_pose.position.x, new_pose.position.y))
 	        break
-	new_pose.orientation = rotateQuaternion(q_orig=Quaternion(0.0,0.0,0.0,1.0),
-		                            yaw=rand.uniform(0, 2 * math.pi))
+
 	return new_pose
 
     def initialise_particle_cloud(self, initialpose):
@@ -52,7 +59,7 @@ class PFLocaliser(PFLocaliserBase):
         y_var = initialpose.pose.covariance[6 * 1 + 1]
         rot_var = initialpose.pose.covariance[6 * 5 + 5]
 
-        for i in range(self.PARTICLE_COUNT - self.RANDOM_PARTICLE_COUNT):
+        for i in range(self.INITIAL_PARTICLE_COUNT):
             new_pose = Pose()
             new_pose.position.x = gauss(mu=initialpose.pose.pose.position.x, sigma=x_var)
             new_pose.position.y = gauss(mu=initialpose.pose.pose.position.y, sigma=y_var)
@@ -61,8 +68,7 @@ class PFLocaliser(PFLocaliserBase):
 
             new_poses.poses.append(new_pose)
 
-        #for i in range(self.RANDOM_PARTICLE_COUNT):
-	#    new_poses.poses.append(self.random_pose())
+        new_poses = self.topup_poses_with_random(new_poses)
 
         return new_poses
 
@@ -78,10 +84,11 @@ class PFLocaliser(PFLocaliserBase):
 
         return int(math.floor(map_x)), int(math.floor(map_y))
 
-    def map_coords_to_pose(self, map_x, map_y):
-        pose = Pose()
-        pose.x = self.sensor_model.map_origin_x + (map_x - 0.5 - self.sensor_model.map_width / 2) / self.sensor_model.map_resolution
-        pose.y = self.sensor_model.map_origin_y + (map_y - 0.5 - self.sensor_model.map_height / 2) / self.sensor_model.map_resolution
+    def map_coords_to_world(self, map_x, map_y):
+        x = self.sensor_model.map_resolution * (map_x - self.sensor_model.map_width / 2) + self.sensor_model.map_origin_x
+        y = self.sensor_model.map_resolution * (map_y - self.sensor_model.map_height / 2) + self.sensor_model.map_origin_y
+
+        return x, y
 
     def map_cell_occupied(self, pose):
         x, y = self.pose_to_map_coords(pose)
@@ -89,6 +96,11 @@ class PFLocaliser(PFLocaliserBase):
         prob_occupied = self.occupancy_map.data[x + y * self.occupancy_map.info.width]
 
         return prob_occupied == -1 or prob_occupied > threshold
+
+    def topup_poses_with_random(self, poses):
+	while len(poses.poses) < self.PARTICLE_COUNT:
+	    poses.poses.append(self.random_pose())
+	return poses
 
     def update_particle_cloud(self, scan):
         scan.ranges = np.fromiter((0.0 if np.isnan(r) else r for r in scan.ranges), float)
@@ -99,11 +111,11 @@ class PFLocaliser(PFLocaliserBase):
         weights = np.fromiter((self.sensor_model.get_weight(scan, pose)
                                for pose in self.particlecloud.poses), float)
 
-        new_poses = self.resample(self.particlecloud.poses, weights, self.PARTICLE_COUNT - self.RANDOM_PARTICLE_COUNT)
-        #for i in range(self.RANDOM_PARTICLE_COUNT):
-	#    new_poses.append(self.random_pose())
+        new_poses = self.resample(self.particlecloud.poses, weights, self.RESAMPLE_PARTICLE_COUNT)
 
 	self.particlecloud.poses = new_poses
+	self.particlecloud = self.topup_poses_with_random(self.particlecloud)
+
         # TODO: what should these actually be?
         x_var = 0.05
         y_var = 0.05
