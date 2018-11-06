@@ -165,7 +165,7 @@ class PFLocaliser(PFLocaliserBase):
     @timeit
     def estimate_pose(self):
         rospy.loginfo("estimate_pose")
-	kern_size = 5
+        kern_size = 5
         k = self.gkern(kern_size, 1)
 
         numBinsHorizontal = 400
@@ -174,51 +174,32 @@ class PFLocaliser(PFLocaliserBase):
         binWidth = self.occupancy_map.info.width / numBinsHorizontal
         binHeight = self.occupancy_map.info.height / numBinsVertical
 
-        bins = np.zeros((numBinsVertical, numBinsHorizontal), dtype=list)
+        particle_bins = np.zeros((numBinsVertical, numBinsHorizontal), dtype=list)
+        bins = np.zeros((numBinsVertical, numBinsHorizontal))
+
 
         for pose in self.particlecloud.poses:
             particle_x, particle_y = self.pose_to_map_coords(pose)
             bin_x = int(math.floor(particle_x / binWidth))
             bin_y = int(math.floor(particle_y / binHeight))
-            if bins[bin_y][bin_x] == 0:
-                bins[bin_y][bin_x] = [pose]
+            bins[bin_y][bin_x] += 1
+            if particle_bins[bin_y][bin_x] == 0:
+                particle_bins[bin_y][bin_x] = [pose]
             else:
-                bins[bin_y][bin_x].append(pose)
+                particle_bins[bin_y][bin_x].append(pose)
 
         convolved = self.conv2d(bins, k)
 
         busiestBinX = 0
-        busiestBinY = 0 
-        busyBin = 0
+        busiestBinY = 0
+        busyBinCount = 0
         for i in range(numBinsVertical - kern_size):
             for j in range(numBinsHorizontal - kern_size):
-                if busyBin < convolved[i][j]:
-                    busiestBinX = j + math.floor(kern_size / 2)
-                    busiestBinY = i + math.floor(kern_size / 2)
-                    busyBin = convolved[i][j]
-
-        if busiestBinX > 0:
-            searchAreaX = (busiestBinX-1) * binWidth
-            searchAreaWidth = binWidth * 3
-        else:
-            searchAreaX = 0
-            searchAreaWidth = binWidth * 2
-
-        if busiestBinY > 0:
-            searchAreaY = (busiestBinY-1) * binHeight
-            searchAreaHeight = binHeight * 3
-        else:
-            searchAreaY = 0
-            searchAreaHeight = binHeight * 2
-        # HERE!!!
-        busyBinCount = 0
-        for i in range(numBinsVertical):
-            for j in range(numBinsHorizontal):
-                if bins[i][j] != 0:
-                    if busyBinCount < len(bins[i][j]):
-                        busiestBinX = j
-                        busiestBinY = i
-                        busyBinCount = bins[i][j]
+                if particle_bins[i][j] != 0:
+                    if busyBinCount < len(convolved[i + math.floor(kern_size / 2)][j + math.floor(kern_size / 2)]):
+                        busiestBinX = j + math.floor(kern_size / 2)
+                        busiestBinY = i + math.floor(kern_size / 2)
+                        busyBinCount = len(convolved[i][j])
 
         # if busiestBinX > 0:
         #     searchAreaX = (busiestBinX-1) * binWidth
@@ -246,9 +227,9 @@ class PFLocaliser(PFLocaliserBase):
 
         for i in range(busiestBinX - 1, busiestBinX + 1):
             for j in range(busiestBinY - 1, busiestBinY + 1):
-                if i >= 0 and i < numBinsHorizontal and j >= 0 and j < numBinsVertical:
-                    if bins[j][i] != 0:
-                        for pose in bins[j][i]:
+                if i >= 0 and i < numBinsHorizontal - kern_size and j >= 0 and j < numBinsVertical - kern_size:
+                    if particle_bins[j + math.floor(kern_size / 2)][i + math.floor(kern_size / 2)] != 0:
+                        for pose in particle_bins[j + math.floor(kern_size / 2)][i + math.floor(kern_size / 2)]:
                             count += 1
                             average.position.x += pose.position.x
                             average.position.y += pose.position.y
