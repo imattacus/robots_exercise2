@@ -1,4 +1,5 @@
-import timeit
+from __future__ import print_function
+import sys
 
 from geometry_msgs.msg import Pose, PoseArray, Quaternion
 from pf_base import PFLocaliserBase
@@ -13,8 +14,7 @@ from time import time
 import numpy as np
 from copy import deepcopy
 
-from __future__ import print_function
-import sys
+
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
@@ -22,11 +22,12 @@ def eprint(*args, **kwargs):
 def timeit(method):
 
     def timed(*args, **kw):
-        ts = time.time()
+        ts = time()
         result = method(*args, **kw)
-        te = time.time()
+        te = time()
 
-        eprint("{}".format(te-ts))
+        with open("timings.csv", 'a+') as f:
+	    f.write("{}\n".format(te-ts))
         return result
 
     return timed
