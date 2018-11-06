@@ -247,19 +247,16 @@ class PFLocaliserBase(object):
                 rnd = random.normalvariate(0, 1)
                 
                 # Rotate particle according to odometry rotation, plus  noise
-                p.orientation = (rotateQuaternion(p.orientation,
-                                                  dif_heading + rnd * dif_heading * self.ODOM_ROTATION_NOISE))
-                
+                p.orientation = rotateQuaternion(p.orientation, dif_heading + self.ODOM_ROTATION_NOISE)
+
                 # Get particle's new orientation
                 theta = getHeading(p.orientation)
                 
                 # Find translation in the direction of particle's orientation
                 travel_x = distance_travelled * math.cos(theta)
                 travel_y = distance_travelled * math.sin(theta)
-                p.position.x = (p.position.x + travel_x +
-                                (rnd * travel_x * self.ODOM_TRANSLATION_NOISE))
-                p.position.y = (p.position.y + travel_y +
-                                (rnd * travel_y * self.ODOM_DRIFT_NOISE))
+                p.position.x = p.position.x + travel_x + self.ODOM_TRANSLATION_NOISE
+                p.position.y = p.position.y + travel_y + self.ODOM_DRIFT_NOISE
     
         return time.time() - t
     

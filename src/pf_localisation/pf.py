@@ -22,8 +22,8 @@ class PFLocaliser(PFLocaliserBase):
 
         # Set motion model parameters
         # TODO: do some experiments to work out what these should actually be
-        self.ODOM_ROTATION_NOISE = 0
-        self.ODOM_TRANSLATION_NOISE = 0
+        self.ODOM_ROTATION_NOISE = -10.0 * math.pi / 180
+        self.ODOM_TRANSLATION_NOISE = -0.2
         self.ODOM_DRIFT_NOISE = 0
 
         # Sensor model parameters
