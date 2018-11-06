@@ -126,17 +126,6 @@ class PFLocaliser(PFLocaliserBase):
             pose.position.y = gauss(mu=pose.position.y, sigma=y_var)
             pose.orientation = rotateQuaternion(q_orig=pose.orientation,
                                                 yaw=gauss(mu=0, sigma=rot_var))
-
-
-    def kMeans(X, K, maxIters = 10, plot_progress = None):
-        centroids = X[np.random.choice(np.arange(len(X)), K), :]
-        for i in range(maxIters):
-            # Cluster Assignment step
-            C = np.array([np.argmin([np.dot(x_i-y_k, x_i-y_k) for y_k in centroids]) for x_i in X])
-            # Move centroids step
-            centroids = [X[C == k].mean(axis = 0) for k in range(K)]
-            if plot_progress != None: plot_progress(X, C, np.array(centroids))
-        return np.array(centroids) , C
     
     def estimate_pose(self):
         rospy.loginfo("estimate_pose")
@@ -149,10 +138,8 @@ class PFLocaliser(PFLocaliserBase):
 
         bins = np.zeros(numBinsVertical, numBinsHorizontal)
 
-
         for pose in self.particlecloud.poses:
-            particle_x = 
-            particle_y = 
+            particle_x, particle_y = self.pose_to_map_coords(pose)
             bin_x = int(math.floor(particle_x / binWidth))
             bin_y = int(math.floor(particle_y / binHeight))
             bins[bin_y][bin_x] += 1
@@ -192,8 +179,8 @@ class PFLocaliser(PFLocaliserBase):
         count = 0
              
         for pose in self.particlecloud.poses:
-            particle_x = 
-            particle_y = 
+            particle_x, particle_y = self.pose_to_map_coords(pose)
+
             if (searchAreaX < particle_x and particle_x < searchAreaX+searchAreaWidth):
                 if (searchAreaY < particle_y and particle_y < searchAreaY+searchAreaHeight):
                     count += 1
