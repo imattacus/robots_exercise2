@@ -27,9 +27,9 @@ class PFLocaliser(PFLocaliserBase):
         # Sensor model parameters
         self.NUMBER_PREDICTED_READINGS = 50  # Number of readings to predict
 
-        self.PARTICLE_COUNT = 200  # Total number of particles
-        self.INITIAL_PARTICLE_COUNT = 50 # Number of particles around the initial pose (<= PARTICLECOUNT)
-	self.RESAMPLE_PARTICLE_COUNT = 150 # Number of particles to generate on resampling (<= PARTICLECOUNT)
+        self.PARTICLE_COUNT = 100  # Total number of particles
+        self.INITIAL_PARTICLE_COUNT = 100 # Number of particles around the initial pose (<= PARTICLECOUNT)
+	self.RESAMPLE_PARTICLE_COUNT = 100 # Number of particles to generate on resampling (<= PARTICLECOUNT)
 
     def random_pose(self):
 	new_pose = Pose()
@@ -126,63 +126,77 @@ class PFLocaliser(PFLocaliserBase):
             pose.position.y = gauss(mu=pose.position.y, sigma=y_var)
             pose.orientation = rotateQuaternion(q_orig=pose.orientation,
                                                 yaw=gauss(mu=0, sigma=rot_var))
-
-
-    def kMeans(X, K, maxIters = 10, plot_progress = None):
-        centroids = X[np.random.choice(np.arange(len(X)), K), :]
-        for i in range(maxIters):
-            # Cluster Assignment step
-            C = np.array([np.argmin([np.dot(x_i-y_k, x_i-y_k) for y_k in centroids]) for x_i in X])
-            # Move centroids step
-            centroids = [X[C == k].mean(axis = 0) for k in range(K)]
-            if plot_progress != None: plot_progress(X, C, np.array(centroids))
-        return np.array(centroids) , C
     
     def estimate_pose(self):
         rospy.loginfo("estimate_pose")
 
-        positions = []
+        numBinsHorizontal = 10
+        numBinsVertical = 10
+
+        binWidth = self.occupancy_map.info.width / numBinsHorizontal
+        binHeight = self.occupancy_map.info.height / numBinsVertical
+
+        bins = np.zeros((numBinsVertical, numBinsHorizontal))
 
         for pose in self.particlecloud.poses:
-            positions.append([pose.position.x, pose.position.y])
+            particle_x, particle_y = self.pose_to_map_coords(pose)
+            bin_x = int(math.floor(particle_x / binWidth))
+            bin_y = int(math.floor(particle_y / binHeight))
+            bins[bin_y][bin_x] += 1
 
-        #whitened = whiten(means)
-        centroids, labels = kMeans(positions, 5)
+        busiestBinX = 0
+        busiestBinY = 0 
+        busyBin = 0
+        for i in range(numBinsVertical):
+            for j in range(numBinsHorizontal):
+                if busyBin < bins[i][j]:
+                    busiestBinX = j
+                    busiestBinY = i
+                    busyBin = bins[i][j]
 
-        centroidGroups = []	
-        for i in len(centroids):
-            group = []
-            for n in labels:
-                if i == n:
-                    group.append(self.particlecloud.poses[n])
-            centroidGroups.append(group)
+        if busiestBinX > 0:
+            searchAreaX = (busiestBinX-1) * binWidth
+            searchAreaWidth = binWidth * 3
+        else:
+            searchAreaX = 0
+            searchAreaWidth = binWidth * 2
 
-        mostMembersCluster = 0
-        maxMembers = len(centroidGroups[0])
+        if busiestBinY > 0:
+            searchAreaY = (busiestBinY-1) * binHeight
+            searchAreaHeight = binHeight * 3
+        else:
+            searchAreaY = 0
+            searchAreaHeight = binHeight * 2
 
-        for i in centroidGroups:
-            noMembers = len(centroidGroups[i])
-            if maxMembers < noMembers:
-                maxMembers = noMembers
-                mostMembersCluster = i
 
-        meanPose = Pose()
-        meanPose.position.x = centroids[mostMembersCluster][0]
-        meanPose.position.y = centroids[mostMembersCluster][1]
-        meanPose.orientation.x = 0.0
-        meanPose.orientation.y = 0.0
-        meanPose.orientation.z = 0.0
-        meanPose.orientation.w = 0.0
+        average = Pose()
+        average.position.x = 0
+        average.position.y = 0
+        average.orientation.x = 0
+        average.orientation.y = 0
+        average.orientation.z = 0
+        average.orientation.w = 0
+        count = 0
+             
+        for pose in self.particlecloud.poses:
+            particle_x, particle_y = self.pose_to_map_coords(pose)
 
-        for pose in centroidGroups[mostMembersCluster]:
-            meanPose.orientation.x += pose.orientation.x
-            meanPose.orientation.y += pose.orientation.y
-            meanPose.orientation.z += pose.orientation.z
-            meanPose.orientation.w += pose.orientation.w
+            if (searchAreaX < particle_x and particle_x < searchAreaX+searchAreaWidth):
+                if (searchAreaY < particle_y and particle_y < searchAreaY+searchAreaHeight):
+                    count += 1
+                    average.position.x += pose.position.x
+                    average.position.y += pose.position.y
+                    average.orientation.x += pose.orientation.x
+                    average.orientation.y += pose.orientation.y
+                    average.orientation.z += pose.orientation.z
+                    average.orientation.w += pose.orientation.w
 
-        meanPose.orientation.x /= maxMembers
-        meanPose.orientation.y /= maxMembers
-        meanPose.orientation.z /= maxMembers
-        meanPose.orientation.w /= maxMembers
+        average.position.x = average.position.x / count
+        average.position.y = average.position.y / count
+        average.orientation.x = average.orientation.x / count
+        average.orientation.y = average.orientation.y / count
+        average.orientation.z = average.orientation.z / count
+        average.orientation.w = average.orientation.w / count
 
-        return meanPose
+        return average
+
