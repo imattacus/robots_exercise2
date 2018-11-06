@@ -27,9 +27,9 @@ class PFLocaliser(PFLocaliserBase):
         # Sensor model parameters
         self.NUMBER_PREDICTED_READINGS = 50  # Number of readings to predict
 
-        self.PARTICLE_COUNT = 200  # Total number of particles
-        self.INITIAL_PARTICLE_COUNT = 50 # Number of particles around the initial pose (<= PARTICLECOUNT)
-	self.RESAMPLE_PARTICLE_COUNT = 150 # Number of particles to generate on resampling (<= PARTICLECOUNT)
+        self.PARTICLE_COUNT = 100  # Total number of particles
+        self.INITIAL_PARTICLE_COUNT = 100 # Number of particles around the initial pose (<= PARTICLECOUNT)
+	self.RESAMPLE_PARTICLE_COUNT = 100 # Number of particles to generate on resampling (<= PARTICLECOUNT)
 
     def random_pose(self):
 	new_pose = Pose()
@@ -136,7 +136,7 @@ class PFLocaliser(PFLocaliserBase):
         binWidth = self.occupancy_map.info.width / numBinsHorizontal
         binHeight = self.occupancy_map.info.height / numBinsVertical
 
-        bins = np.zeros(numBinsVertical, numBinsHorizontal)
+        bins = np.zeros((numBinsVertical, numBinsHorizontal))
 
         for pose in self.particlecloud.poses:
             particle_x, particle_y = self.pose_to_map_coords(pose)
