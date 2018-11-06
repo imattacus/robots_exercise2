@@ -29,7 +29,7 @@ class PFLocaliser(PFLocaliserBase):
 
         self.PARTICLE_COUNT = 200  # Total number of particles
         self.INITIAL_PARTICLE_COUNT = 180 # Number of particles around the initial pose (<= PARTICLECOUNT)
-    self.RESAMPLE_PARTICLE_COUNT = 185 # Number of particles to generate on resampling (<= PARTICLECOUNT)
+        self.RESAMPLE_PARTICLE_COUNT = 185 # Number of particles to generate on resampling (<= PARTICLECOUNT)
 
     def random_pose(self):
 	new_pose = Pose()
