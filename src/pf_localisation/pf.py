@@ -61,32 +61,20 @@ class PFLocaliser(PFLocaliserBase):
 
             new_poses.poses.append(new_pose)
 
-        for i in range(self.RANDOM_PARTICLE_COUNT):
-	    new_poses.poses.append(self.random_pose())
+        #for i in range(self.RANDOM_PARTICLE_COUNT):
+	#    new_poses.poses.append(self.random_pose())
 
         return new_poses
 
     def resample(self, particles, weights, count):
-        S = []
-        c = [weights[0]]
-        for i in range(1, count):
-            c.append(c[i - 1] + weights[i])
-
-        u = [rand.uniform(0, 1 / count)]
-        i = 0
-        for j in range(0, count):
-            while (u[j] > c[i]):
-                i += 1
-            S.append(deepcopy(particles[i]))
-            u.append(u[j] + 1 / count)
-        return S
+        return [deepcopy(np.random.choice(particles, p=weights / weights.sum())) for i in range(count)]
 
     def pose_to_map_coords(self, pose):
         ox = pose.position.x
         oy = pose.position.y
 
-        map_x = (ox - self.sensor_model.map_origin_x) * self.sensor_model.map_resolution + 0.5 + self.sensor_model.map_width / 2
-        map_y = (oy - self.sensor_model.map_origin_y) * self.sensor_model.map_resolution + 0.5 + self.sensor_model.map_height / 2
+        map_x = math.floor((ox - self.sensor_model.map_origin_x) / self.sensor_model.map_resolution + 0.5) + self.sensor_model.map_width / 2
+        map_y = math.floor((oy - self.sensor_model.map_origin_y) / self.sensor_model.map_resolution + 0.5) + self.sensor_model.map_height / 2
 
         return int(math.floor(map_x)), int(math.floor(map_y))
 
@@ -112,8 +100,8 @@ class PFLocaliser(PFLocaliserBase):
                                for pose in self.particlecloud.poses), float)
 
         new_poses = self.resample(self.particlecloud.poses, weights, self.PARTICLE_COUNT - self.RANDOM_PARTICLE_COUNT)
-        for i in range(self.RANDOM_PARTICLE_COUNT):
-	    new_poses.append(self.random_pose())
+        #for i in range(self.RANDOM_PARTICLE_COUNT):
+	#    new_poses.append(self.random_pose())
 
 	self.particlecloud.poses = new_poses
         # TODO: what should these actually be?
@@ -126,6 +114,7 @@ class PFLocaliser(PFLocaliserBase):
             pose.position.y = gauss(mu=pose.position.y, sigma=y_var)
             pose.orientation = rotateQuaternion(q_orig=pose.orientation,
                                                 yaw=gauss(mu=0, sigma=rot_var))
+
 
     def estimate_pose(self):
         rospy.loginfo("estimate_pose")
