@@ -102,20 +102,19 @@ class PFLocaliser(PFLocaliserBase):
 
         return prob_occupied == -1 or prob_occupied > threshold
 
-    def score_particle(self, scan, pose):
-        return min(1 - int(self.map_cell_occupied(pose)), self.sensor_model.get_weight(scan, pose))
-
     def update_particle_cloud(self, scan):
         scan.ranges = np.fromiter((0.0 if np.isnan(r) else r for r in scan.ranges), float)
 
         # Update particlecloud, given map and laser scan
-        weights = np.fromiter((self.score_particle(scan, pose)
+        self.particlecloud.poses = [particle for particle in self.particlecloud.poses
+                                    if not self.map_cell_occupied(particle)]
+        weights = np.fromiter((self.sensor_model.get_weight(scan, pose)
                                for pose in self.particlecloud.poses), float)
 
-	new_poses = PoseArray()
         new_poses = self.resample(self.particlecloud.poses, weights, self.PARTICLE_COUNT - self.RANDOM_PARTICLE_COUNT)
         for i in range(self.RANDOM_PARTICLE_COUNT):
 	    new_poses.append(self.random_pose())
+
 	self.particlecloud.poses = new_poses
         # TODO: what should these actually be?
         x_var = 0.05
