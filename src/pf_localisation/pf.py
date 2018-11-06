@@ -147,13 +147,29 @@ class PFLocaliser(PFLocaliserBase):
             pose.position.y = gauss(mu=pose.position.y, sigma=y_var)
             pose.orientation = rotateQuaternion(q_orig=pose.orientation,
                                                 yaw=gauss(mu=0, sigma=rot_var))
-    
+
+    def conv2d(self, a, f):
+        s = f.shape + tuple(np.subtract(a.shape, f.shape) + 1)
+        strd = np.lib.stride_tricks.as_strided
+        subM = strd(a, shape=s, strides=a.strides * 2)
+        return np.einsum('ij,ijkl->kl', f, subM)
+
+    def gkern(self, l=5, sig=1.):
+        ax = np.arange(-l // 2 + 1., l // 2 + 1.)
+        xx, yy = np.meshgrid(ax, ax)
+
+        kernel = np.exp(-(xx ** 2 + yy ** 2) / (2. * sig ** 2))
+
+        return kernel / np.sum(kernel)
+
     @timeit
     def estimate_pose(self):
         rospy.loginfo("estimate_pose")
+	kern_size = 5
+        k = self.gkern(kern_size, 1)
 
-        numBinsHorizontal = 10
-        numBinsVertical = 10
+        numBinsHorizontal = 400
+        numBinsVertical = 400
 
         binWidth = self.occupancy_map.info.width / numBinsHorizontal
         binHeight = self.occupancy_map.info.height / numBinsVertical
@@ -169,8 +185,32 @@ class PFLocaliser(PFLocaliserBase):
             else:
                 bins[bin_y][bin_x].append(pose)
 
+        convolved = self.conv2d(bins, k)
+
         busiestBinX = 0
         busiestBinY = 0 
+        busyBin = 0
+        for i in range(numBinsVertical - kern_size):
+            for j in range(numBinsHorizontal - kern_size):
+                if busyBin < convolved[i][j]:
+                    busiestBinX = j + math.floor(kern_size / 2)
+                    busiestBinY = i + math.floor(kern_size / 2)
+                    busyBin = convolved[i][j]
+
+        if busiestBinX > 0:
+            searchAreaX = (busiestBinX-1) * binWidth
+            searchAreaWidth = binWidth * 3
+        else:
+            searchAreaX = 0
+            searchAreaWidth = binWidth * 2
+
+        if busiestBinY > 0:
+            searchAreaY = (busiestBinY-1) * binHeight
+            searchAreaHeight = binHeight * 3
+        else:
+            searchAreaY = 0
+            searchAreaHeight = binHeight * 2
+        # HERE!!!
         busyBinCount = 0
         for i in range(numBinsVertical):
             for j in range(numBinsHorizontal):
