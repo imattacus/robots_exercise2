@@ -168,11 +168,13 @@ class PFLocaliser(PFLocaliserBase):
         kern_size = 5
         k = self.gkern(kern_size, 1)
 
+	inclusion_range = 2
+
         numBinsHorizontal = 400
         numBinsVertical = 400
 
-        binWidth = self.occupancy_map.info.width / numBinsHorizontal
-        binHeight = self.occupancy_map.info.height / numBinsVertical
+        binWidth = int(math.floor(self.occupancy_map.info.width / numBinsHorizontal))
+        binHeight = int(math.floor(self.occupancy_map.info.height / numBinsVertical))
 
         particle_bins = np.zeros((numBinsVertical, numBinsHorizontal), dtype=list)
         bins = np.zeros((numBinsVertical, numBinsHorizontal))
@@ -195,11 +197,11 @@ class PFLocaliser(PFLocaliserBase):
         busyBinCount = 0
         for i in range(numBinsVertical - kern_size):
             for j in range(numBinsHorizontal - kern_size):
-                if particle_bins[i][j] != 0:
-                    if busyBinCount < len(convolved[i + math.floor(kern_size / 2)][j + math.floor(kern_size / 2)]):
-                        busiestBinX = j + math.floor(kern_size / 2)
-                        busiestBinY = i + math.floor(kern_size / 2)
-                        busyBinCount = len(convolved[i][j])
+                if particle_bins[i][j] != 0:	
+                    if busyBinCount < convolved[i][j]:
+                        busiestBinX = int(j + math.floor(kern_size / 2))
+                        busiestBinY = int(i + math.floor(kern_size / 2))
+                        busyBinCount = convolved[i][j]
 
         # if busiestBinX > 0:
         #     searchAreaX = (busiestBinX-1) * binWidth
@@ -225,11 +227,14 @@ class PFLocaliser(PFLocaliserBase):
         average.orientation.w = 0
         count = 0
 
-        for i in range(busiestBinX - 1, busiestBinX + 1):
-            for j in range(busiestBinY - 1, busiestBinY + 1):
+        for i in range(busiestBinX - inclusion_range, busiestBinX + inclusion_range + 1):
+            for j in range(busiestBinY - inclusion_range, busiestBinY + inclusion_range + 1):
                 if i >= 0 and i < numBinsHorizontal - kern_size and j >= 0 and j < numBinsVertical - kern_size:
-                    if particle_bins[j + math.floor(kern_size / 2)][i + math.floor(kern_size / 2)] != 0:
-                        for pose in particle_bins[j + math.floor(kern_size / 2)][i + math.floor(kern_size / 2)]:
+		    print("made it this far, {}, {}".format(i,j))
+		    conv_i = int(i + math.floor(kern_size / 2))
+		    conv_j = int(j + math.floor(kern_size / 2))
+                    if particle_bins[j][i] != 0:
+                        for pose in particle_bins[j][i]:
                             count += 1
                             average.position.x += pose.position.x
                             average.position.y += pose.position.y
@@ -237,6 +242,7 @@ class PFLocaliser(PFLocaliserBase):
                             average.orientation.y += pose.orientation.y
                             average.orientation.z += pose.orientation.z
                             average.orientation.w += pose.orientation.w
+			    print(count)
 
         average.position.x = average.position.x / count
         average.position.y = average.position.y / count
